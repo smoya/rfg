@@ -19,11 +19,13 @@ const (
 
 var numFiles, fileSizeBytes int
 var outputDir string
+var fileContent *string
 
 func init() {
 	flag.IntVar(&numFiles, "n", 10, "-n=<number-of-files> Number of files to generate. 10 by default.")
 	flag.IntVar(&fileSizeBytes, "s", 100, "-s=<size-of-files-in-bytes> Size of each generated files in Bytes. 100 by default.")
 	flag.StringVar(&outputDir, "o", "", "-o=<size-of-files-in-bytes> Output directory. Mandatory")
+	fileContent = flag.String("c", "", "-c=<files-content> The content of the files. Random generated string by default")
 	flag.Parse()
 
 	if outputDir == "" {
@@ -37,6 +39,17 @@ func init() {
 		}
 	} else {
 		log.Println("Warning: Output dir already exists. Content may be overwritten.")
+	}
+
+	var fileContentFlagProvided bool
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "c" {
+			fileContentFlagProvided = true
+		}
+	})
+
+	if !fileContentFlagProvided {
+		fileContent = nil
 	}
 }
 
@@ -58,7 +71,12 @@ func generate(fileID int) error {
 
 	defer f.Close()
 
-	_, err = f.Write(randBytes(fileSizeBytes))
+	if fileContent != nil {
+		_, err = f.WriteString(*fileContent)
+	} else {
+		_, err = f.Write(randBytes(fileSizeBytes))
+
+	}
 	return err
 }
 
